@@ -1,57 +1,162 @@
 # Environmental Monitoring System (EMS)
 
-A local, real-sensor monitoring dashboard using Arduino UNO, DHT11 and BMP180/BMP085.
+## 1. Project Overview
 
-## Data flow
+The Environmental Monitoring System (EMS) is an IoT-based real-time environmental monitoring application that collects data from physical sensors and displays the measurements through a web-based dashboard.
 
-`DHT11 + BMP180 -> Arduino UNO -> USB Serial -> Python collector -> Flask API -> React/Vite dashboard`
+The system uses an Arduino UNO connected to a DHT11 temperature and humidity sensor and a BMP180 atmospheric pressure sensor. The collected readings are transmitted to a Python application through serial communication. A Flask backend processes the readings and provides REST APIs, while a React-based dashboard displays the sensor measurements and their trends.
 
-**No random or simulated readings are generated.** The dashboard displays `--` until a valid physical sensor sample reaches the backend.
+**The system uses actual hardware sensor readings. It does not generate random or simulated sensor values.**
 
-## Hardware wiring
+## 2. Objectives
 
-### DHT11 module -> Arduino UNO
-| DHT11 | Arduino UNO |
+- Monitor environmental temperature in real time.
+- Measure relative humidity.
+- Monitor atmospheric pressure.
+- Collect sensor readings using Arduino UNO.
+- Transfer sensor data through serial communication.
+- Process and expose readings through Flask REST APIs.
+- Display live measurements through a React dashboard.
+- Visualize recent sensor readings using trend graphs.
+
+## 3. Technologies Used
+
+| Component | Technology |
+|---|---|
+| Microcontroller | Arduino UNO |
+| Temperature and Humidity Sensor | DHT11 |
+| Pressure Sensor | BMP180 |
+| Hardware Programming | Arduino C/C++ |
+| Data Collection | Python |
+| Backend | Flask |
+| Frontend | React.js |
+| Frontend Build Tool | Vite |
+| Data Communication | Serial Communication and REST API |
+| Styling | CSS |
+| Version Control | Git and GitHub |
+
+## 4. System Architecture
+
+The project follows a layered architecture:
+
+1. **Sensor Layer:** DHT11 measures temperature and humidity, while BMP180 measures atmospheric pressure.
+2. **Microcontroller Layer:** Arduino UNO reads sensor measurements and transmits them through USB serial communication.
+3. **Data Collection Layer:** Python reads the serial data, validates the measurements, and sends them to the backend as JSON.
+4. **Backend Layer:** Flask receives the readings and maintains the latest measurements and recent history in memory.
+5. **Frontend Layer:** React retrieves readings through REST APIs and displays them on the dashboard.
+
+### Data Flow
+
+Physical Sensors → Arduino UNO → Python Collector → Flask Backend → REST API → React Dashboard
+
+## 5. Hardware Requirements
+
+- Arduino UNO
+- DHT11 temperature and humidity sensor
+- BMP180 pressure sensor
+- Breadboard
+- Jumper wires
+- USB cable
+- Computer or laptop
+
+### Hardware Connections
+
+**DHT11 Sensor**
+
+| DHT11 Pin | Arduino UNO |
 |---|---|
 | VCC | 5V |
-| DATA | D2 |
+| DATA | Digital Pin 2 |
 | GND | GND |
 
-For a bare 4-pin DHT11, add a 10 kΩ pull-up resistor between DATA and VCC. A 3-pin breakout module normally includes it.
+**BMP180 Sensor**
 
-### BMP180/BMP085 -> Arduino UNO (I2C)
-| BMP180 | Arduino UNO |
+| BMP180 Pin | Arduino UNO |
 |---|---|
 | SDA | A4 |
 | SCL | A5 |
 | GND | GND |
-| VCC | Follow the breakout board specification |
+| VCC | According to the breakout board specifications |
 
-Important: a bare BMP180 chip is a 3.3 V device. Some breakout boards include a regulator/level shifting and accept 5 V VIN; others do not. Check the exact board markings/datasheet before powering it. Do not assume every BMP180 module is 5 V tolerant.
+**Note:** A bare BMP180 sensor requires 3.3V. Check the specifications of your breakout board before connecting it to 5V.
 
-## Software prerequisites
+## 6. Project Folder Structure
+
+```text
+EMS_SENSOR_DASHBOARD/
+│
+├── arduino/
+│   └── ems_sensors.ino
+│
+├── collector/
+│   ├── collector.py
+│   └── requirements.txt
+│
+├── backend/
+│   ├── server.py
+│   └── requirements.txt
+│
+├── frontend/
+│   ├── src/
+│   │   ├── main.tsx
+│   │   ├── App.tsx
+│   │   ├── index.css
+│   │   ├── vite-env.d.ts
+│   │   └── services/
+│   │       └── api.ts
+│   ├── index.html
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── vite.config.ts
+│
+├── .gitignore
+└── README.md
+```
+
+## 7. Software Requirements
+
+Install the following software before running the project:
 
 - Arduino IDE
-- Python 3.10+
-- Node.js LTS
-- VS Code (optional)
+- Python 3
+- Node.js and npm
+- Visual Studio Code
+- Git
 
-## 1. Arduino setup
+### Arduino Libraries
 
-Install these libraries from Arduino IDE > Library Manager:
-- `DHT sensor library` by Adafruit
-- `Adafruit Unified Sensor` (dependency of the DHT library)
-- `Adafruit BMP085 Library` by Adafruit (supports BMP180/BMP085)
+Install these libraries through Arduino IDE Library Manager:
 
-Open `arduino/ems_sensors.ino`, select **Arduino Uno** and the correct COM port, then upload. The sketch sends one CSV line every 2 seconds:
+- DHT sensor library by Adafruit
+- Adafruit Unified Sensor
+- Adafruit BMP085 Library
 
-`temperature_C,humidity_percent,pressure_hPa`
+## 8. Installation and Execution
 
-Open Serial Monitor at 9600 baud to verify readings, then **close Serial Monitor** before starting the Python collector (only one program can own the COM port at a time).
+Run the components in the following order.
 
-## 2. Backend setup (Terminal 1)
+### Step 1: Configure Arduino
 
-From the project root:
+1. Connect the DHT11 and BMP180 sensors to Arduino UNO.
+2. Open `arduino/ems_sensors.ino` in Arduino IDE.
+3. Install the required libraries.
+4. Select the correct Arduino board and COM port.
+5. Upload the program.
+6. Ensure the sensors are connected correctly.
+
+The Arduino sends sensor measurements through serial communication at 9600 baud.
+
+Example serial output:
+
+```text
+28.5,65.0,1008.2
+```
+
+The values represent temperature (°C), humidity (%) and pressure (hPa).
+
+### Step 2: Start the Flask Backend
+
+Open a terminal in the project root directory.
 
 ```powershell
 cd backend
@@ -61,15 +166,13 @@ python -m pip install -r requirements.txt
 python server.py
 ```
 
-Backend: http://127.0.0.1:5000  
-Health check: http://127.0.0.1:5000/api/health  
-Latest reading: http://127.0.0.1:5000/api/latest
+The backend runs at:
 
-The API returns `data: null` until the first real sensor reading arrives. Readings/history are held in memory and reset when the backend restarts.
+`http://127.0.0.1:5000`
 
-## 3. Collector setup (Terminal 2)
+### Step 3: Start the Python Collector
 
-Open a second terminal at the project root:
+Open a second terminal.
 
 ```powershell
 cd collector
@@ -78,18 +181,20 @@ py -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-Set your actual Arduino COM port (example COM5):
+Set the Arduino COM port. Replace COM5 with the actual port shown in Arduino IDE.
 
 ```powershell
 $env:EMS_SERIAL_PORT="COM5"
 python collector.py
 ```
 
-The collector prints detected serial ports at startup. Change `COM5` to the port shown in Windows Device Manager > Ports (COM & LPT). Keep Arduino Serial Monitor closed.
+The collector reads sensor measurements and sends them to the Flask backend.
 
-## 4. Frontend setup (Terminal 3)
+**Important:** Close Arduino IDE Serial Monitor before starting the Python collector because both applications cannot normally use the same serial port simultaneously.
 
-From the project root:
+### Step 4: Start the React Frontend
+
+Open a third terminal.
 
 ```powershell
 cd frontend
@@ -97,26 +202,78 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173
+Open the following address in your browser:
 
-## Run order
+`http://localhost:5173`
 
-1. Upload Arduino sketch.
-2. Start backend.
-3. Start collector.
-4. Start frontend.
+## 9. Backend API Endpoints
 
-Keep all three terminals running. The dashboard polls the API every 2 seconds.
+| HTTP Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/update` | Receives sensor readings |
+| GET | `/api/latest` | Returns the latest sensor readings |
+| GET | `/api/history` | Returns recent sensor history |
+| GET | `/api/health` | Checks backend availability |
 
-## Troubleshooting
+### Example Sensor Data
 
-- **COM port busy:** close Arduino Serial Monitor and Serial Plotter.
-- **Could not open COMx:** check Device Manager and set `EMS_SERIAL_PORT` to the correct port.
-- **BMP not detected:** check SDA=A4, SCL=A5, common GND, power requirements, and that the board is actually BMP180/BMP085-compatible.
-- **DHT read failed:** check DHT pin order, DATA on D2, and pull-up resistor if using a bare sensor.
-- **Dashboard says backend offline:** ensure Flask is running on port 5000.
-- **No reading yet:** check Serial Monitor first, close it, then run collector.
+```json
+{
+  "temperature": 28.5,
+  "humidity": 65.0,
+  "pressure": 1008.2
+}
+```
 
-## GitHub
+## 10. Dashboard Features
 
-Do not commit `.venv/`, `node_modules/`, `__pycache__/`, or `.env` files. A `.gitignore` is included.
+- Real-time temperature monitoring.
+- Live humidity monitoring.
+- Atmospheric pressure monitoring.
+- Sensor connection and data availability status.
+- Last updated timestamp.
+- Recent sensor trend visualization.
+- Automatic dashboard refresh every two seconds.
+
+The dashboard displays unavailable values when actual sensor readings have not yet reached the backend.
+
+## 11. Data Storage
+
+The current implementation maintains the latest sensor readings and up to 300 recent history samples in the Flask backend's memory.
+
+The current version does not use a persistent database. Consequently, the stored readings are cleared when the backend restarts.
+
+A future enhancement can integrate SQLite to permanently store timestamped sensor readings and support long-term historical analysis.
+
+## 12. Expected Output
+
+After successful hardware connection and execution:
+
+1. Arduino reads the physical sensor measurements.
+2. Python collects and validates the readings.
+3. Flask receives and processes the data.
+4. React fetches the latest readings.
+5. The dashboard displays temperature, humidity and pressure.
+6. Trend graphs update as new measurements arrive.
+
+## 13. Future Enhancements
+
+- Integrate SQLite for permanent sensor-data storage.
+- Add historical data analysis and date-based filtering.
+- Introduce configurable environmental threshold monitoring.
+- Add email or notification-based alerts.
+- Support multiple sensor locations.
+- Deploy the dashboard and backend to a cloud platform.
+
+## 14. Conclusion
+
+The Environmental Monitoring System demonstrates the integration of IoT hardware, Python-based data collection, Flask backend development and React frontend technologies.
+
+By collecting actual environmental measurements from physical sensors and presenting them through a web-based dashboard, the system provides a practical approach to real-time environmental monitoring. The modular architecture also allows future improvements such as permanent database storage, historical analysis and advanced monitoring features.
+
+---
+
+**Project:** Environmental Monitoring System (EMS)  
+**Category:** Internet of Things (IoT)  
+**Architecture:** Arduino + Python + Flask + React  
+**Data Source:** Physical DHT11 and BMP180 sensors
